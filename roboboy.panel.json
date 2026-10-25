@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "la.tessel.roboboy.go2-control",
   "name": "Go2 Control",
-  "description": "Walk, stand, and recover the Unitree Go2 simulation with live motion and backend status.",
-  "version": "1.1.0",
+  "description": "Touch joystick, visual motion feedback, and learned standing/recovery for the Unitree Go2 simulation.",
+  "version": "1.2.1",
   "entryPoint": "./dist/index.js",
-  "integrity": "sha256-ificjSK0dU2uN6df8QJtxiTcTIhsYF2A9rOJR6IXOEQ=",
+  "integrity": "sha256-Na+Ev9VJwoW3sIdXLWkH37HT9DI+OVf3dGZSuh0KOuE=",
   "compatibility": {
     "panelApi": "^2.0.0",
     "roboboy": ">=0.3.0-0 <1.0.0"

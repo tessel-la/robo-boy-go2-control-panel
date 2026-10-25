@@ -1,10 +1,9 @@
 # Go2 Control for Robo-Boy
 
-Walk the existing Unitree Go2 simulation from a Robo-Boy workspace tile. Hold a direction
-to move; release it to stand and balance. Live readouts show body velocity, position,
-heading, and height from the simulator's ideal odometry. **Stand** and **Recover / stand up**
-use the existing FR-Net recovery checkpoint; the panel reports the active motion
-and compute backend.
+Drive the existing Unitree Go2 simulation with a touch joystick or direction buttons.
+Release to stand and balance. A robot heading graphic, speed meter, and live motion
+state show what Go2 is doing. **Stand** and **Stand up** use the existing FR-Net
+recovery checkpoint. Detailed odometry stays under **Details & keyboard**.
 
 This is an external Panel API v2 panel in its own repository. It uses the published
 walking policy already running in [`genesis-mobile-sim`](https://github.com/tessel-la/genesis-mobile-sim).
@@ -44,17 +43,23 @@ simulator should publish the standard robot topics in that ROS domain.
 
 ## Controls
 
+- Drag the center of the joystick to walk and move sideways with proportional speed
+- Hold a turn button with a second finger to move and turn together
 - Hold the forward/backward buttons or W/S: ±0.2 m/s
 - Hold the sideways buttons or Q/E: ±0.15 m/s
 - Hold the turn buttons or A/D: ±0.4 rad/s
 - **Stand** ends walking and selects the recovery policy's standing behavior
-- **Recover / stand up** runs the published recovery policy and waits for a stable stance
-- Arrow keys walk forward/backward and turn; Space stops when the tile itself has focus
+- **Stand up** runs the published recovery policy and waits for a stable stance
+- Arrow keys walk forward/backward and turn; Escape stops all held inputs
+- Space stops when the tile itself has focus; native action buttons keep their Space activation
 - Enter or Space holds a focused direction button; release the key to stop
 
-Focus the tile before using keys. Commands repeat at 20 Hz while held. Release,
+Focus the tile before using keys. Combined inputs stay within the same speed limits;
+diagonal translation uses a bounded ellipse. The touch joystick has a radial dead zone.
+Each finger or key releases independently, and **Stop** clears every input.
+Commands repeat at 20 Hz while held. Release,
 pointer cancellation, focus loss, hidden tiles, disconnected ROS, changed connections,
-stale odometry, and removal end the repeating command. The simulator also expires
+tile resize, stale odometry or motion status, and removal end the repeating command. The simulator also expires
 commands after 0.5 s of wall time. Reconnection never resumes a held direction.
 
 Controls become available only after `/robot_description` identifies the Go2 model
@@ -63,6 +68,10 @@ that walking is available. During recovery or a fall, walking is disabled; an ex
 recovery request remains available when the robot is fallen. Failed subscriptions expose **Retry telemetry**.
 Hidden tiles release subscriptions and timers. The layout follows the host viewport
 and theme, including narrow tiles.
+
+The heading graphic and speed meter use measured odometry rather than requested
+commands. They clear when telemetry becomes unavailable. The heading axes are the
+simulator's odometry x/y axes; the graphic is not an occupancy map or a compass.
 
 ## Permissions
 
@@ -91,10 +100,13 @@ This is a local, unpublished panel. No remote catalog or release is required to 
 
 ## Verification
 
-The 13 automated checks cover model/odometry validation, held commands and release,
+The 18 automated checks cover model/odometry validation, held commands and release,
 keyboard and pointer cancellation, stale telemetry, connection changes, inactive tiles,
 failed subscriptions and retry, publish failures, late subscription cleanup, and
-recovery state acknowledgement before allowing walking.
+recovery state acknowledgement before allowing walking. They also cover the joystick's
+dead zone and diagonal bounds, simultaneous touch movement and turning, independent
+input release, resize cancellation, native action-button keyboard activation, and
+clearing graphical feedback when motion status expires.
 The installed sandbox was checked in the running Robo-Boy for add, reload, reconnect,
 live telemetry, and a ROS-observed command followed by zero on release. Dark, light,
 Solarized, and custom theme tokens were checked in an isolated preview at narrow and

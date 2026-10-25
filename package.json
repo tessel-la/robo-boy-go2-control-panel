@@ -1,7 +1,7 @@
 {
   "name": "@tessel-la/roboboy-go2-control-panel",
-  "version": "1.1.0",
-  "description": "External Go2 walking controls and live telemetry for Robo-Boy",
+  "version": "1.2.1",
+  "description": "Visual Go2 motion feedback and touch controls for Robo-Boy",
   "type": "module",
   "license": "MIT",
   "repository": {

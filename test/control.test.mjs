@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
-import definition, { isGo2Description, parseOdometry, parseMotionStatus, velocityForControl } from '../dist/index.js';
+import definition, { isGo2Description, parseOdometry, parseMotionStatus, velocityForControl, velocityForStick } from '../dist/index.js';
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const model = { data: `<robot name="go2_description">${['FL','FR','RL','RR'].flatMap(leg =>
@@ -44,11 +44,12 @@ async function setup(t, options = {}) {
   instance.mount(container);
   await delay(0);
   const root = container.querySelector('.go2');
+  root.querySelector('[data-joystick]').getBoundingClientRect = () => ({ left: 0, top: 0, width: 164, height: 164 });
   const emit = (topic, message, includeRemoved = false) => subscriptions.filter(s => s.spec.topic === topic && (includeRemoved || !s.removed)).forEach(s => s.callback(message));
   const key = (type, value, target = root) => target.dispatchEvent(new dom.window.KeyboardEvent(type, { key: value, bubbles: true, cancelable: true }));
-  const pointer = (type, target = root, id = 1) => {
+  const pointer = (type, target = root, id = 1, position = { clientX: 82, clientY: 82 }) => {
     const event = new dom.window.Event(type, { bubbles: true, cancelable: true });
-    Object.assign(event, { pointerId: id, button: 0 });
+    Object.assign(event, { pointerId: id, button: 0, ...position });
     target.dispatchEvent(event);
   };
   t.after(async () => {
@@ -97,6 +98,7 @@ test('requires a recognized Go2 plus fresh telemetry and never commands motion o
   assert.equal(button(p, 'forward').disabled, false);
   assert.equal(p.publications.length, 0);
   assert.equal(p.root.querySelector('[data-value="position"]').textContent, '1.00 / 2.00 m');
+  assert.match(p.root.querySelector('[data-role="feedback"]').textContent, /Hold a direction/);
 });
 
 test('held controls repeat and release outside the tile sends zero', async t => {
@@ -235,4 +237,98 @@ test('learned recovery is explicit and disables walking until standing is acknow
   assert.equal(button(p,'forward').disabled, false);
   assert.equal(parseMotionStatus({data:'null'}),null);
   assert.equal(parseMotionStatus({data:'not JSON'}),null);
+});
+
+test('touch stick rejects invalid geometry, has a dead zone and bounds diagonal motion', () => {
+  for (const args of [[0, 0, 50], [3, 3, 50], [NaN, 1, 50], [0, 1, 0]]) {
+    assert.deepEqual(velocityForStick(...args), { x: 0, y: 0, yaw: 0 });
+  }
+  const forward = velocityForStick(0, -500, 50);
+  assert.equal(forward.x, .2);
+  const right = velocityForStick(500, 0, 50);
+  assert.equal(right.y, -.15);
+  const diagonal = velocityForStick(50, -50, 50);
+  assert.ok(Math.abs(Math.hypot(diagonal.x / .2, diagonal.y / .15) - 1) < 1e-10);
+  assert.equal(diagonal.yaw, 0);
+});
+
+test('two fingers can move and turn; releasing either finger preserves only the other input', async t => {
+  const p = await setup(t); p.identify();
+  const stick = p.root.querySelector('[data-stick]');
+  p.pointer('pointerdown', stick, 1);
+  await delay(0);
+  p.pointer('pointermove', window, 1, { clientX: 82, clientY: 31 });
+  await delay(0);
+  p.pointer('pointerdown', button(p, 'turn-right'), 2);
+  await delay(60);
+  assert.equal(p.publications.at(-1).message.linear.x, .2);
+  assert.equal(p.publications.at(-1).message.angular.z, -.4);
+  assert.notEqual(stick.style.transform, '');
+  p.pointer('pointerup', window, 1);
+  await delay(60);
+  assert.equal(p.publications.at(-1).message.linear.x, 0);
+  assert.equal(p.publications.at(-1).message.angular.z, -.4);
+  assert.equal(stick.style.transform, '');
+  p.pointer('pointerup', window, 2);
+  assert.equal(moving(p.publications.at(-1)), false);
+  const count = p.publications.length;
+  p.pointer('pointermove', window, 1, { clientX: 82, clientY: 31 });
+  await delay(60);
+  assert.equal(p.publications.length, count);
+});
+
+test('combined keys remain bounded, release independently, and Escape stops every input', async t => {
+  const p = await setup(t); p.identify();
+  p.key('keydown', 'w'); p.key('keydown', 'q'); p.key('keydown', 'a');
+  await delay(60);
+  const value = p.publications.at(-1).message;
+  assert.ok(Math.hypot(value.linear.x / .2, value.linear.y / .15) <= 1);
+  assert.equal(value.angular.z, .4);
+  p.key('keyup', 'w'); await delay(60);
+  assert.equal(p.publications.at(-1).message.linear.x, 0);
+  assert.equal(p.publications.at(-1).message.linear.y, .15);
+  p.key('keydown', 'Escape');
+  assert.equal(moving(p.publications.at(-1)), false);
+  const nativeSpace = new window.KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+  p.root.querySelector('[data-motion="stand"]').dispatchEvent(nativeSpace);
+  assert.equal(nativeSpace.defaultPrevented, false);
+});
+
+test('resize and pointer cancellation center the stick without resuming on later pointer moves', async t => {
+  const p = await setup(t); p.identify();
+  const stick = p.root.querySelector('[data-stick]');
+  for (const cancel of ['resize', 'pointercancel', 'lostpointercapture']) {
+    p.pointer('pointerdown', stick, 1, { clientX: 82, clientY: 31 });
+    if (cancel === 'resize') p.viewport({width: 900});
+    else p.pointer(cancel, cancel === 'lostpointercapture' ? stick : window, 1);
+    assert.equal(moving(p.publications.at(-1)), false);
+    assert.equal(stick.style.transform, '');
+    const count = p.publications.length;
+    p.pointer('pointermove', window, 1, { clientX: 82, clientY: 31 });
+    await delay(60);
+    assert.equal(p.publications.length, count);
+  }
+});
+
+test('visual motion comes from odometry and disappears when motion status expires', async t => {
+  const p = await setup(t);
+  const originalNow = Date.now;
+  let now = 0;
+  Date.now = () => now;
+  t.after(() => { Date.now = originalNow; });
+  p.identify();
+  assert.equal(p.root.querySelector('[data-role="speed"]').textContent, '0.20');
+  assert.equal(p.root.querySelector('[data-role="activity"]').textContent, 'Moving');
+  assert.equal(p.root.querySelector('[data-role="heading"]').style.transform, 'rotate(90deg)');
+  p.key('keydown', 'w');
+  now = 3000;
+  p.emit('/odom', odom); // Fresh odometry cannot make an expired policy status ready.
+  assert.equal(moving(p.publications.at(-1)), false);
+  assert.equal(button(p, 'forward').disabled, true);
+  assert.equal(p.root.querySelector('[data-role="speed"]').textContent, '—');
+  assert.equal(p.root.querySelector('[data-role="visual"]').dataset.live, 'false');
+  p.emit('/go2/status', status);
+  const count = p.publications.length;
+  await delay(60);
+  assert.equal(p.publications.length, count);
 });
