@@ -1,6 +1,6 @@
 {
   "name": "@tessel-la/roboboy-go2-control-panel",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Visual Go2 motion feedback and touch controls for Robo-Boy",
   "type": "module",
   "license": "MIT",
