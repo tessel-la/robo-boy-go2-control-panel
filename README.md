@@ -1,45 +1,55 @@
 # Go2 Control for Robo-Boy
 
-Drive the existing Unitree Go2 simulation with a touch joystick or direction buttons.
-Release to stand and balance. A robot heading graphic, speed meter, and live motion
-state show what Go2 is doing. **Stand** and **Stand up** use the existing FR-Net
-recovery checkpoint. Detailed odometry stays under **Details & keyboard**.
+Drive the Unitree Go2 simulation with a touch joystick, direction buttons, or keyboard. See measured motion and request learned standing or recovery from a Robo-Boy workspace tile.
 
-This is an external Panel API v2 panel in its own repository. It uses the published
-walking policy already running in [`genesis-mobile-sim`](https://github.com/tessel-la/genesis-mobile-sim).
-It does not create a robot, train a gait, or implement robot services.
+This independently installed external panel uses Robo-Boy's sandbox and brokered ROS API.
+It requests only the exact ROS resources declared in [roboboy.panel.json](roboboy.panel.json).
 
-## Build
+## Install and run
 
-Use Node.js 22 or later. Clone [Robo-Boy](https://github.com/tessel-la/robo-boy)
-alongside this repository, so `../robo-boy/panel-sdk` exists before installing.
-The checkout uses that type-only SDK 2.2.0. Runtime dependencies are not required.
+Use a Robo-Boy deployment with Panel API v2 and the official Panel Inventory configured.
+See [Robo-Boy's installation guide](https://github.com/tessel-la/robo-boy/blob/main/docs/external-panels.md#remote-inventories-and-private-panels)
+for the authenticated Panel Manager setup.
+
+1. Start the [Go2 simulator](https://github.com/tessel-la/genesis-mobile-sim) using its CPU quickstart and the same ROS discovery settings as Robo-Boy. Run one simulator per ROS domain.
+2. Open **Manage installations…**, browse the official inventory, select **Go2 Control**, review its ROS permissions, and apply the installation.
+3. Connect Robo-Boy to the simulator's ROS stack and add **Go2 Control** from the workspace panel menu.
+4. Request control from Robo-Boy's control menu before driving.
+
+Installing the panel does not start the simulator. Published panel users do not need Node.js,
+this source checkout, or the SDK. Releases must be published and registered before this panel
+appears in the official inventory; maintainers follow [the release guide](docs/releasing.md).
+
+## Develop
+
+Use Node.js 22 or later and npm. No sibling source checkout is needed to build: the type-only
+SDK is pinned to its public GitHub release and dependencies are locked.
 
 ```bash
-npm install
-npm run typecheck
-npm test
-npm run build
-npm run integrity
-npm run validate
+git clone https://github.com/tessel-la/robo-boy-go2-control-panel.git
+cd robo-boy-go2-control-panel
+npm ci
+npm run release:prepare
 ```
 
-`integrity` updates the SHA-256 SRI in `roboboy.panel.json`. Rebuild and update it after
-changing source. `validate` imports the built artifact and checks its identity and digest.
+This runs typecheck, tests, build, SRI generation, and artifact validation. After source changes,
+rebuild and update SRI before installing. Use the local source configuration with a sibling
+Robo-Boy checkout for frontend development:
 
-## Install locally
+```bash
+cd ../robo-boy
+npm run dev:panels -- --config ../robo-boy-go2-control-panel/examples/panel-sources.json
+```
 
-The current deployment's panel manager mounts the sibling workspace at `/panel-workspace`.
-Add `robo-boy-go2-control-panel` to its existing local source and preview/apply with
-**Manage installations…**. Preserve the existing selection and other panel repositories.
-The manager verifies and atomically installs the artifact without restarting Robo-Boy.
-A minimal source configuration is in [examples/panel-sources.json](examples/panel-sources.json).
-For other deployments, mount this repository into their manager workspace first; see
-[Robo-Boy's custom-panel guide](https://github.com/tessel-la/robo-boy/blob/main/docs/custom-panels.md).
+For Docker, use `examples/docker-compose.panel.yml` with Robo-Boy's local panel overlay;
+see [custom panels](https://github.com/tessel-la/robo-boy/blob/main/docs/custom-panels.md).
+Keep the manager authenticated and preserve other selections in an existing deployment.
 
-Refresh Robo-Boy, connect to the Go2 ROS stack, then choose **Add workspace panel →
-Go2 Control**. Request control from Robo-Boy's control menu before driving. Only one
-simulator should publish the standard robot topics in that ROS domain.
+## How it fits
+
+The panel owns its UI and command lifecycle. The simulator owns physics, policies, watchdogs,
+and ROS services. Robo-Boy owns the sandbox, control gateway, installation, and workspace.
+[AGENTS.md](AGENTS.md) and [CONTRIBUTING.md](CONTRIBUTING.md) describe source contributions.
 
 ## Controls
 
@@ -87,7 +97,7 @@ The only capability is `ros`:
 
 The panel requests no discovery, services, storage, network, or device access.
 
-## Limits
+## Limitations
 
 Cancel navigation before manual control. **Stop** sends zero velocity; it does not cancel
 Nav2 goals or act as a hardware emergency stop. The two reused policies provide walking, standing, and recovery. Sit, jump, and
@@ -96,19 +106,6 @@ the simulator applies a 12 s simulated timeout and leaves the robot in damping.
 Use Robo-Boy's existing Camera and 3D view panels for images and lidar. Navigation
 actions stay in Robo-Boy's native action/behavior-tree tools because Panel API v2 has no actions.
 
-This is a local, unpublished panel. No remote catalog or release is required to install it here.
+## License
 
-## Verification
-
-The 18 automated checks cover model/odometry validation, held commands and release,
-keyboard and pointer cancellation, stale telemetry, connection changes, inactive tiles,
-failed subscriptions and retry, publish failures, late subscription cleanup, and
-recovery state acknowledgement before allowing walking. They also cover the joystick's
-dead zone and diagonal bounds, simultaneous touch movement and turning, independent
-input release, resize cancellation, native action-button keyboard activation, and
-clearing graphical feedback when motion status expires.
-The installed sandbox was checked in the running Robo-Boy for add, reload, reconnect,
-live telemetry, and a ROS-observed command followed by zero on release. Dark, light,
-Solarized, and custom theme tokens were checked in an isolated preview at narrow and
-wide tile widths. Backward and both sideways commands were also verified with the
-existing Go2 model and policy in a separate CPU simulation.
+MIT; see [LICENSE](LICENSE). The SDK is a separate type-only dependency with its own notice.

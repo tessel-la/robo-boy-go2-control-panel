@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "38a3dc92007c9c334b43a3c475175f8651f29e73",
+  "include-v-in-tag": true,
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "@tessel-la/roboboy-go2-control-panel",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "roboboy.panel.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}
