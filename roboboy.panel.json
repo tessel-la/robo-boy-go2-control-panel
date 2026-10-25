@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "la.tessel.roboboy.go2-control",
+  "name": "Go2 Control",
+  "description": "Walk, stand, and recover the Unitree Go2 simulation with live motion and backend status.",
+  "version": "1.1.0",
+  "entryPoint": "./dist/index.js",
+  "integrity": "sha256-ificjSK0dU2uN6df8QJtxiTcTIhsYF2A9rOJR6IXOEQ=",
+  "compatibility": {
+    "panelApi": "^2.0.0",
+    "roboboy": ">=0.3.0-0 <1.0.0"
+  },
+  "capabilities": [
+    "ros"
+  ],
+  "permissions": {
+    "ros": {
+      "subscribe": [
+        "/robot_description",
+        "/odom",
+        "/go2/status"
+      ],
+      "publish": [
+        "/cmd_vel",
+        "/go2/motion_cmd"
+      ]
+    }
+  },
+  "author": {
+    "name": "tessel·la"
+  },
+  "repository": "https://github.com/tessel-la/robo-boy-go2-control-panel",
+  "tags": [
+    "ros",
+    "go2",
+    "locomotion",
+    "simulation"
+  ]
+}

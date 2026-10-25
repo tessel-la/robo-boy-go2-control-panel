@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "sources": [{
+    "type": "local", "name": "go2-workspace", "root": "../..",
+    "rootEnv": "ROBOBOY_PANEL_WORKSPACE", "repositories": ["robo-boy-go2-control-panel"]
+  }],
+  "selection": { "mode": "include", "panelIds": ["la.tessel.roboboy.go2-control"] }
+}
