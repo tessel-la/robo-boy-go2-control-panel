@@ -1,0 +1,4 @@
+services:
+  panel-manager:
+    volumes:
+      - ../robo-boy-go2-control-panel:/panel-workspace/robo-boy-go2-control-panel:ro

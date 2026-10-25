@@ -12,7 +12,8 @@
     "dist",
     "roboboy.panel.json",
     "README.md",
-    "examples"
+    "examples",
+    "LICENSE"
   ],
   "exports": "./dist/index.js",
   "scripts": {
@@ -20,11 +21,16 @@
     "integrity": "node scripts/update-integrity.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/*.test.mjs",
-    "validate": "node scripts/validate-artifact.mjs"
+    "validate": "node scripts/validate-artifact.mjs",
+    "release:prepare": "npm run typecheck && npm test && npm run integrity && npm run validate:artifact",
+    "validate:artifact": "node scripts/validate-artifact.mjs"
   },
   "devDependencies": {
-    "@tessel-la/roboboy-panel-sdk": "file:../robo-boy/panel-sdk",
+    "@tessel-la/roboboy-panel-sdk": "https://github.com/tessel-la/robo-boy/releases/download/panel-sdk-v2.2.0/tessel-la-roboboy-panel-sdk-2.2.0.tgz",
     "jsdom": "^25.0.1",
     "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
