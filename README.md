@@ -5,6 +5,11 @@ Drive the Unitree Go2 simulation with a touch joystick, direction buttons, or ke
 This independently installed external panel uses Robo-Boy's sandbox and brokered ROS API.
 It requests only the exact ROS resources declared in [roboboy.panel.json](roboboy.panel.json).
 
+![Go2 Control panel with motion feedback, touch joystick, Stop, and recovery controls](docs/images/control-panel.png)
+
+Panel preview with sample telemetry. This is the released interface, not a live robot session.
+See [preview provenance](docs/images/README.md).
+
 ## Install and run
 
 Use a Robo-Boy deployment with Panel API v2 and the official Panel Inventory configured.
