@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/tessel-la/robo-boy-go2-control-panel/compare/v1.3.0...v1.4.0) (2026-10-25)
+
+
+### Features
+
+* promote dev to main ([#7](https://github.com/tessel-la/robo-boy-go2-control-panel/issues/7)) ([5030da3](https://github.com/tessel-la/robo-boy-go2-control-panel/commit/5030da3a9b722ce192b60555865cd76ad8113f11))
+
 ## [1.3.0](https://github.com/tessel-la/robo-boy-go2-control-panel/compare/v1.2.1...v1.3.0) (2026-10-25)
 
 
